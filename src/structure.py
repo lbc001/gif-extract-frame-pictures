@@ -80,16 +80,30 @@ class plain_text_extension:
     define the plain text extension structure.
     '''
     def __init__(self, data, begin):
-        self.sub_blocks = []
+        self.sub_blocks = b""
         self.current = begin + 1
         while True:
             block_size = data[self.current]
             if block_size == 0:
                 break
-            self.sub_blocks.append(data[self.current+1:self.current+block_size+1])
+            self.sub_blocks += data[self.current+1:self.current+block_size+1]
             self.current += block_size + 1
         self.current += 1
         
+class comment_extension:
+    '''
+    define the comment extension structure.
+    '''
+    self.sub_blocks = b""
+    self.current = begin + 1
+    while True:
+        block_size = data[self.current]
+        if block_size == 0:
+            break
+        self.sub_blocks += data[self.current+1:self.current+block_size+1]
+        self.current += block_size + 1
+    self.current += 1
+
 class image_descriptor:
     '''
     define the image descriptor structure.

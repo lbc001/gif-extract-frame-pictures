@@ -62,7 +62,7 @@ class Decoder:
                 self._stream_current_value = self._code_table[self._stream_current_index][0]
             else:
                 self._stream_prev_value = self._code_table[self._stream_prev_index]
-                self._stream_current_value = self._code_table[self._stream_prev_index][0]                
+                self._stream_current_value = self._code_table[self._stream_prev_index][0]             
             pc_sum = self._stream_prev_value + [self._stream_current_value]
             self._current_code_table_key_index += 1
             self._code_table[self._current_code_table_key_index] = pc_sum
@@ -77,7 +77,6 @@ class Decoder:
         prev = current
         begin_code = bits_to_int(self._unpacked_bit_string[current:])
         assert(begin_code == self._clear_code_index)
-        #print(self._unpacked_bit_string)
         while abs(current) <= self._length:
             if self._current_code_table_key_index >= (2**self._current_code_size - 1):
                 self._current_code_size += 1

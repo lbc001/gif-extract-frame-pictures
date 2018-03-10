@@ -3,9 +3,10 @@
 test the gif file structure
 '''
 import math
+import argparse
 from PIL import Image
-from src import logical_screen_description_block, global_color_table, local_color_table
-from src import plain_text_extension, application_extension, graphic_control_extension, image_descriptor
+from src import logical_screen_description_block, global_color_table, local_color_table, image_descriptor
+from src import plain_text_extension, application_extension, graphic_control_extension, comment_extension
 from src import bytes_to_int
 from src import Decoder
 from src import BEGIN, END, EXTENTION_INTRODUCER
@@ -18,6 +19,7 @@ class Reader:
     def __init__(self, file_name):
         self._data = open(file_name, "rb").read()
         self._begin = 0
+        self._picture_index = 0
 
     def read_until(self, end_value):
         while True:
@@ -38,7 +40,8 @@ class Reader:
         '''
         save the decoded .gif static data to the .jpg data. 
         '''
-        img = Image.new("RGB", (width, height))
+        background_color_index = self._logical_screen_description_block.background_color_index
+        img = Image.new("RGB", (width, height), self._global_color_table.rgb_list[background_color_index])
         pixels = img.load()
         for i in range(width):
             for j in range(height):
@@ -72,7 +75,8 @@ class Reader:
                         self._plain_text_extension = plain_text_extension(self._data, self._begin)
                         self._begin = self._plain_text_extension.current
                     elif self._data[self._begin] == 0xfe:
-                        pass
+                        self._comment_comment_extension = comment_extension(self._data, self._begin)
+                        self._begin = self._comment_comment_extension.current
                 elif self._data[self._begin] == BEGIN:
                     self._begin += 1
                     self._image_descriptor = image_descriptor(self._data, self._begin)
@@ -85,6 +89,7 @@ class Reader:
                 elif self._data[self._begin] == END:
                     break
                 else:
+                    blocks_data = b""
                     lzw_minium_size = self._data[self._begin]
                     self._begin += 1
                     while True:
@@ -92,14 +97,19 @@ class Reader:
                         if block_size == 0:
                             break
                         sub_blocks_data = self._data[self._begin+1:self._begin+block_size+1]
-                        decoder = Decoder(lzw_minium_size, sub_blocks_data[::-1])
-                        decoder.start()
-                        decode_result = decoder.get_result()
-                        assert(len(decode_result) == self._image_descriptor.get_size())
-                        self.save_pictures(self._image_descriptor.image_width, self._image_descriptor.image_height, decode_result, "test.jpg")
+                        blocks_data += sub_blocks_data
                         self._begin += block_size + 1
                     self._begin += 1
+                    decoder = Decoder(lzw_minium_size, blocks_data[::-1])
+                    decoder.start()
+                    decode_result = decoder.get_result()
+                    assert(len(decode_result) == self._image_descriptor.get_size())
+                    self.save_pictures(self._image_descriptor.image_width, self._image_descriptor.image_height, decode_result, "output_{}.jpg".format(self._picture_index))
+                    self._picture_index += 1
 
 if __name__ == "__main__":
-    reader = Reader("pictures/small.gif")
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument("-i", "--input", help="enter the input file path")
+    args = arg_parser.parse_args()
+    reader = Reader(args.input)
     reader.start()
